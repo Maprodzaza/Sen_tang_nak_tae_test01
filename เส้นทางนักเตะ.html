@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>เส้นทางนักเตะ</title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;700;800&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f1e7;--card:#fff;--ink:#14231a;--mute:#5d6b61;--pitch:#1f5f3a;--gold:#f2c230;--red:#d6453d;--line:#d9d6c5;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a14;--card:#182720;--ink:#eef0e6;--mute:#9fb0a4;--line:#2b3d33}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 'Sarabun',system-ui,sans-serif}
+h1,h2{font-family:'Kanit','Sarabun',sans-serif;margin:0}
+.top{background:repeating-linear-gradient(90deg,#1f5f3a 0 48px,#256d43 48px 96px);color:#f3f1e7;padding:16px;border-bottom:4px solid var(--gold)}
+.top h1{max-width:640px;margin:0 auto;font-size:24px;font-weight:800}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px 40px}
+.card{display:flow-root;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-top:14px}
+.row{display:flex;gap:8px 12px;flex-wrap:wrap}.st{flex:1 1 30%;font-size:13px}
+.bar{height:7px;background:var(--line);border-radius:4px;margin-top:2px;overflow:hidden}.bar i{display:block;height:100%;background:var(--pitch)}
+.meta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:14px;color:var(--mute);margin-bottom:8px}.meta b{color:var(--ink)}
+button{font:500 16px 'Kanit','Sarabun',sans-serif;cursor:pointer;border:2px solid var(--ink);background:var(--card);color:var(--ink);border-radius:8px;padding:10px 14px;text-align:left;width:100%;margin-top:8px}
+button small{display:block;font:400 14px 'Sarabun',sans-serif;opacity:.85}
+button:hover,button.on{background:var(--gold);color:#14231a}button.main{background:var(--pitch);color:#f3f1e7;border-color:var(--pitch)}button.main:hover{background:var(--gold);color:#14231a}
+button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+input{font:inherit;width:100%;padding:10px;border:2px solid var(--ink);border-radius:8px;background:var(--card);color:var(--ink)}
+h2{font-size:19px;margin-bottom:4px}p{margin:6px 0}.mu{color:var(--mute)}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}
+.log p{padding-left:10px;border-left:3px solid var(--line)}.log .g1{border-color:var(--pitch)}.log .b1{border-color:var(--red)}
+</style>
+</head>
+<body>
+<div class="top"><h1>⚽ เส้นทางนักเตะ</h1></div>
+<div class="wrap" id="app"></div>
+<script>
+var CT={"ไทย":{b:0,c:["บุรีรัมย์","เมืองทอง","ทรู แบงค็อก","ราชบุรี","พัทยา","ลำปาง"]},"ญี่ปุ่น":{b:6,c:["โยโกฮามา","คาวาซากิ","โกเบ","โตเกียว","นาโกยา","โอซาก้า"]},"บราซิล":{b:10,c:["ปัลเมรัส","ฟลาเมงโก","กรีมิโอ","ซานโตส","โครินเธียนส์","บาเอีย"]},"สเปน":{b:14,c:["บิลเบา","บียาร์เรอัล","เซบีญา","บาเลนเซีย","เบติส","เซลตา"]},"อังกฤษ":{b:16,c:["ไบรตัน","แอสตัน วิลลา","นิวคาสเซิล","ลีดส์","เบิร์นลีย์","นอริช"]}};
+var FOR=["ลีลล์","อาแจ็กซ์","เบนฟิกา","ดอร์ตมุนด์","นาโปลี","ปอร์โต"],SB=[74,68,62,56,50,44],R=["สำรอง","ตัวสลับ","ตัวจริง"];
+var ST={shoot:"ยิง",pass:"จ่าย",drib:"เลี้ยง",def:"รับ",phys:"กาย"};
+var W={ST:{shoot:.35,drib:.25,pass:.1,def:.05,phys:.25},MF:{shoot:.1,pass:.35,drib:.25,def:.15,phys:.15},DF:{shoot:.03,pass:.15,drib:.1,def:.45,phys:.27}};
+var PN={ST:"กองหน้า",MF:"กองกลาง",DF:"กองหลัง"};
+var WEALTH=[["ครอบครัวยากจน",{phys:3,mor:-4},"บ้านอยู่ในซอยแออัด รองเท้าสตั๊ดคู่แรกได้ต่อจากรุ่นพี่"],["ครอบครัวฐานะปานกลาง",{},"พ่อแม่พอส่งเสียได้ ไม่ลำบากแต่ก็ไม่ฟุ่มเฟือย"],["ครอบครัวร่ำรวย",{pass:2,mor:3,cash:.05},"พ่อแม่จ้างโค้ชส่วนตัวให้ตั้งแต่ประถม"]];
+var CHILD=[["เด็กตั้งใจเรียน",{pass:5,def:2,shoot:-2,mor:5},"ครูชมว่าอ่านเกมเก่งเกินวัย ทุกเย็นทำการบ้านเสร็จก่อนค่อยออกไปเตะ"],["เด็กไม่ตั้งใจเรียน",{drib:6,shoot:2,mor:2},"โดดเรียนไปซ้อมบอลกับเพื่อน ครูโทรฟ้องพ่อแม่เป็นประจำ"],["เด็กเกเร",{phys:5,drib:3,mor:-8},"ทะเลาะวิวาทจนโดนพักการเรียน แต่สนามบอลเป็นที่เดียวที่ใจสงบ"],["เด็กซ้อมริมถนน",{drib:6,pass:2,mor:3},"เตะบอลหน้าบ้านทุกวัน จนเพื่อนบ้านเรียกว่าเจ้าหนูลูกหนัง"],["ลูกโค้ชท้องถิ่น",{shoot:2,pass:2,def:2,drib:2,phys:2},"พ่อเป็นโค้ชทีมหมู่บ้าน เรียนรู้พื้นฐานมาตั้งแต่เดินได้"],["เด็กช่วยพ่อแม่ขายของ",{phys:6,def:2,mor:4},"ตื่นตีสี่ช่วยพ่อแม่เปิดร้านก่อนไปโรงเรียน ร่างกายแกร่งเกินอายุ"]];
+var EV=[
+["แมวมองจากสโมสรใหญ่มาดูคุณซ้อมข้างสนาม",[["โชว์ฟอร์มเต็มที่",{drib:1,mor:5,scout:1},"แมวมองจดชื่อคุณลงสมุด"],["ทำตัวปกติ",{mor:1},"คุณไม่กดดันตัวเองและซ้อมได้ดี"]]],
+["ข้อเท้าพลิกระหว่างซ้อมเบาๆ",[["ให้ทีมแพทย์ดูแล",{inj:1,phys:1},"พักหนึ่งนัด แต่หายสนิท"],["ฝืนซ้อมต่อ",{inj:2,phys:-3},"อาการแย่ลง ต้องพักนาน"]]],
+["เพื่อนชวนปาร์ตี้ดึกก่อนสัปดาห์แข่ง",[["ไป เอาสนุก",{mor:10,phys:-2},"สนุกมาก แต่ตื่นมาตัวหนัก"],["ปฏิเสธ นอนเอาแรง",{phys:2,mor:-2},"ร่างกายสดชื่นขึ้น"]]],
+["สื่อมาสัมภาษณ์ว่าคุณคาดหวังอะไรกับฤดูกาลนี้",[["ถ่อมตัว เน้นทีม",{mor:4,pass:1},"แฟนบอลชื่นชมความสุภาพ"],["ประกาศเป็นดาวเด่นให้ได้",{mor:8,shoot:1,rival:1},"กระแสแรง แต่เพื่อนร่วมทีมมองคุณแปลกๆ"]]],
+["สปอนเซอร์ติดต่อมาเสนอสัญญาโฆษณา",[["เซ็นสัญญา",{cash:.3,mor:3,phys:-1},"เงินเข้า แต่เสียเวลาถ่ายงาน"],["ปฏิเสธ โฟกัสฟุตบอล",{shoot:1,pass:1},"คุณมีสมาธิกับการซ้อมเต็มที่"]]],
+["คลิปลีลาของคุณถูกแชร์ว่อนโซเชียล",[["รีโพสต์ ขอบคุณแฟนๆ",{mor:7,cash:.05},"ยอดผู้ติดตามพุ่ง"],["ปิดแอป ตั้งใจซ้อม",{drib:1,mor:2},"ไม่หลงกับกระแส"]]],
+["พ่อแม่โทรมาบอกว่าที่บ้านเริ่มลำบากเรื่องเงิน",[["ส่งเงินช่วยจากเงินเก็บ",{cash:-.05,mor:5},"ครอบครัวซาบซึ้งใจ"],["ปลอบใจ แล้วตั้งใจเล่นต่อ",{mor:-4,phys:1},"คุณรู้สึกกดดันแต่มีแรงฮึด"]]],
+["เพื่อนร่วมตำแหน่งขอท้าแข่งกันซ้อมหลังเลิกงาน",[["รับคำท้า",{shoot:1,drib:1,phys:-1,rival:-1},"คุณเค้นฟอร์มจนโค้ชสังเกต"],["ปฏิเสธ",{mor:-2},"คุณเสียความมั่นใจนิดหน่อย"]]]
+];
+var MO=[
+{t:"บอลหลุดมาที่ขอบกรอบเขตโทษ คุณว่างอยู่คนเดียว",x:74,y:50,o:[["ยิงทันที","shoot",55,"g"],["เลี้ยงเข้าไปอีกก้าว","drib",58,"g"],["จ่ายให้เพื่อนริมเส้น","pass",45,"a"]]},
+{t:"โต้กลับเร็ว เหลือคุณกับผู้รักษาประตูสองต่อหนึ่ง",x:86,y:42,o:[["ยิงมุมไกล","shoot",52,"g"],["เลี้ยงหลบผู้รักษาประตู","drib",62,"g"],["จ่ายให้เพื่อนที่วิ่งตามมา","pass",40,"a"]]},
+{t:"เพื่อนเปิดบอลจากริมเส้น คุณอยู่กลางกรอบเขตโทษ",x:84,y:55,o:[["วอลเลย์เข้าประตู","shoot",60,"g"],["เปิดบอลต่อให้เพื่อน","pass",48,"a"],["ปล่อยบอลให้ผ่าน","drib",40,"a"]]},
+{t:"คู่แข่งสวนกลับมา คุณเป็นด่านสุดท้ายก่อนถึงประตู",x:38,y:50,o:[["พุ่งเข้าแท็กเกิล","def",52,"d"],["ยืนประกบรอจังหวะ","def",42,"d"],["ใช้ร่างกายเบียดออก","phys",48,"d"]]},
+{t:"ได้ลูกฟรีคิกห่างประตูราวสิบเก้าเมตร",x:68,y:50,o:[["เตะเข้ามุมสูง","shoot",62,"g"],["เตะเปิดให้เพื่อนโหม่ง","pass",50,"a"],["เล่นสั้น เปลี่ยนจังหวะ","drib",42,"a"]]},
+{t:"เพื่อนเปิดลูกเตะมุม คุณกระโดดสู้กลางกรอบเขตโทษ",x:88,y:46,o:[["โหม่งเข้าประตู","phys",54,"g"],["โหม่งทดให้เพื่อน","pass",46,"a"],["ถอยกลับมาตั้งรับ","def",38,"d"]]}
+],MP={ST:[0,1,2,4,5],MF:[0,2,3,4,5],DF:[3,3,5,4,3]};
+var S,m,H=[],app=document.getElementById("app");
+function rnd(a,b){return a+Math.floor(Math.random()*(b-a+1))}
+function cl(v,a,b){return Math.max(a,Math.min(b,v))}
+function ovr(){var w=W[S.pos],t=0;for(var k in w)t+=S.s[k]*w[k];return Math.round(t)}
+function fx(o){for(var k in o){if(S.s[k]!==undefined)S.s[k]=cl(S.s[k]+o[k],15,99);else if(k=="mor")S.mor=cl(S.mor+o.mor,0,100);else if(k=="cash")S.cash+=o.cash;else if(k=="fat")S.fat=cl(S.fat+o.fat,0,100);else if(k=="inj")S.inj+=o.inj;else if(k=="scout")S.scout=1;else if(k=="rival")S.rs=Math.min(S.rs,0)-1}}
+function B(a){H=a.map(function(x){return x[1]});return a.map(function(x,i){return '<button data-i="'+i+'" class="'+(x[3]||"")+'">'+x[0]+(x[2]?'<small>'+x[2]+'</small>':"")+'</button>'}).join("")}
+app.onclick=function(e){var b=e.target.closest("[data-i]");if(b&&H[b.dataset.i])H[b.dataset.i]()};
+function head(){var s="";for(var k in ST)s+='<div class="st">'+ST[k]+' <b>'+S.s[k]+'</b><div class="bar"><i style="width:'+S.s[k]+'%"></i></div></div>';
+return '<div class="card"><div style="float:right;width:60px;margin-left:8px">'+av(S.look,S.top,S.wa)+'</div><div class="meta"><span><b>'+S.name+'</b> · '+PN[S.pos]+' · '+S.country+'</span><span>อายุ <b>'+S.age+'</b></span></div><div class="meta"><span>ทีม <b>'+(S.club?S.club.n:"-")+'</b></span><span>บทบาท <b>'+(S.club?R[S.role]:"-")+'</b></span><span>ภาพรวม <b>'+ovr()+'</b></span><span>กำลังใจ <b>'+S.mor+'</b></span></div><div class="row">'+s+'</div><div class="meta" style="margin:8px 0 0"><span>ประตู <b>'+S.goals+'</b></span><span>แอสซิสต์ <b>'+S.ast+'</b></span><span>เงินสะสม <b>$'+S.cash.toFixed(2)+'M</b></span></div></div>'}
+function pitchOld(x,y){var s='<svg viewBox="0 0 300 180" style="width:100%;border-radius:8px;display:block" role="img" aria-label="มุมกล้องบนสนาม แสดงตำแหน่งของคุณ"><rect width="300" height="180" fill="#2a7a4a"/>';
+for(var i=0;i<6;i++)s+='<rect x="'+i*50+'" width="25" height="180" fill="#2f8250"/>';
+s+='<g fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="1.5"><rect x="3" y="3" width="294" height="174"/><path d="M150 3V177"/><circle cx="150" cy="90" r="22"/><rect x="3" y="45" width="40" height="90"/><rect x="257" y="45" width="40" height="90"/><rect x="285" y="75" width="12" height="30"/></g>';
+var px=x*3,py=y*1.8;
+s+='<circle cx="'+(px+16)+'" cy="'+(py-20)+'" r="8" fill="#d6453d"/><circle cx="'+(px+22)+'" cy="'+(py+18)+'" r="8" fill="#d6453d"/><circle cx="'+(px-18)+'" cy="'+(py+6)+'" r="8" fill="#3b6fd6"/>';
+return s+'<circle cx="'+px+'" cy="'+py+'" r="9" fill="#f2c230" stroke="#14231a" stroke-width="2"/><text x="'+px+'" y="'+(py-14)+'" font-size="10" fill="#fff" text-anchor="middle">คุณ</text><circle cx="'+(px+12)+'" cy="'+py+'" r="3.5" fill="#fff"/></svg>'}
+function fg(x,y,c,r){x=cl(x,14,286);y=cl(y,14,166);return '<ellipse cx="'+x+'" cy="'+(y+7)+'" rx="8" ry="3" fill="#000" opacity=".25"/><ellipse cx="'+x+'" cy="'+y+'" rx="7" ry="5.5" fill="'+c+'" stroke="#14231a" stroke-width=".8"/><circle cx="'+x+'" cy="'+y+'" r="3" fill="#e0b48f"/><path d="M'+(x-3)+' '+y+'A3 3 0 0 1 '+(x+3)+' '+y+'Z" fill="#3a2a20"/>'+(r?'<circle cx="'+x+'" cy="'+y+'" r="10" fill="none" stroke="#f2c230" stroke-width="1.6"/>':'')}
+function ball(x,y,tg){var b='<circle cx="'+x+'" cy="'+y+'" r="3.4" fill="#fff" stroke="#14231a" stroke-width=".6"/><circle cx="'+x+'" cy="'+y+'" r="1.2" fill="#14231a"/>';if(!tg)return '<circle cx="'+(x+1)+'" cy="'+(y+3)+'" r="3.4" fill="#000" opacity=".25"/>'+b;return '<g><animateTransform attributeName="transform" type="translate" values="0 0;'+(tg[0]-x)+' '+(tg[1]-y)+'" keyTimes="0;1" calcMode="spline" keySplines=".2 .6 .4 1" dur=".9s" fill="freeze"/>'+b+'</g>'}
+function bnr(t,bg,fc){return '<g opacity="0"><animate attributeName="opacity" values="0;0;1" keyTimes="0;.55;1" dur="1.3s" fill="freeze"/><rect x="55" y="66" width="190" height="48" rx="8" fill="'+bg+'" stroke="#14231a" stroke-width="2"/><text x="150" y="98" font-size="24" font-weight="800" fill="'+fc+'" text-anchor="middle">'+t+'</text></g>'}
+function pitch(x,y,mn,tg,bn){var at=x>55,px=cl(x*3,40,270),py=cl(y*1.8,30,150),T=S.club.n+" vs "+m.opp+" · "+mn+"′",
+s='<svg viewBox="0 0 300 180" style="width:100%;border-radius:8px;display:block" role="img" aria-label="มุมกล้องบนสนาม แสดงตำแหน่งของคุณ" font-family="Kanit,Sarabun,sans-serif"><defs><radialGradient id="vg" cx="50%" cy="50%" r="75%"><stop offset="60%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".38"/></radialGradient><pattern id="net" width="3" height="3" patternUnits="userSpaceOnUse"><path d="M0 0L3 3M3 0L0 3" stroke="#fff" stroke-opacity=".7" stroke-width=".4"/></pattern></defs><rect width="300" height="180" fill="#2b7b4b"/>';
+for(var i=0;i<10;i++)s+='<rect x="'+i*30+'" width="15" height="180" fill="#318855"/>';
+s+='<g fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="1.2"><rect x="6" y="6" width="288" height="168"/><path d="M150 6V174"/><circle cx="150" cy="90" r="24"/><rect x="6" y="44" width="46" height="92"/><rect x="6" y="68" width="16" height="44"/><path d="M52 76A20 20 0 0 1 52 104"/><rect x="248" y="44" width="46" height="92"/><rect x="278" y="68" width="16" height="44"/><path d="M248 76A20 20 0 0 0 248 104"/><path d="M6 12A6 6 0 0 0 12 6M288 6A6 6 0 0 0 294 12M12 174A6 6 0 0 0 6 168M294 168A6 6 0 0 0 288 174"/><rect x="294" y="76" width="6" height="28" fill="url(#net)"/><rect x="0" y="76" width="6" height="28" fill="url(#net)"/></g><circle cx="150" cy="90" r="1.5" fill="#fff"/><circle cx="38" cy="90" r="1.2" fill="#fff"/><circle cx="262" cy="90" r="1.2" fill="#fff"/>';
+if(at){s+='<path d="M'+px+' '+py+'L284 90" stroke="#fff" stroke-opacity=".6" stroke-width="1.4" stroke-dasharray="4 3"/>';
+s+=(tg&&tg[2]!==undefined?'<g><animateTransform attributeName="transform" type="translate" values="0 0;0 '+tg[2]+'" keyTimes="0;1" calcMode="spline" keySplines=".2 .6 .4 1" dur=".7s" fill="freeze"/>'+fg(284,90,"#e8913a")+'</g>':fg(284,90,"#e8913a"))+fg(px+16,py-16,"#d6453d")+fg(px+24,py+14,"#d6453d")+fg(px+40,py-2,"#d6453d")+fg(px-34,py-42,"#3b6fd6")+fg(px-46,py+26,"#3b6fd6")+fg(px-14,py+44,"#3b6fd6")}
+else s+=fg(18,90,"#1b3a8a")+fg(px+26,py-6,"#d6453d")+fg(px+46,py+24,"#d6453d")+fg(px+10,py-40,"#d6453d")+fg(px-26,py+30,"#3b6fd6")+fg(px+4,py+42,"#3b6fd6")+fg(px-30,py-30,"#3b6fd6");
+s+=fg(px,py,"#f2c230",1)+''+ball(px+10,py+3,tg)+'<rect x="'+(px-10)+'" y="'+(py-26)+'" width="20" height="10" rx="3" fill="#14231a"/><text x="'+px+'" y="'+(py-18.5)+'" font-size="7" fill="#f2c230" text-anchor="middle">คุณ</text>';
+return s+'<rect width="300" height="180" fill="url(#vg)"/><rect x="8" y="8" width="'+(16+T.length*4.6)+'" height="13" rx="3" fill="#14231a" opacity=".85"/><text x="13" y="17.5" font-size="7.5" fill="#fff">'+T+'</text>'+(bn||"")+'</svg>'}
+function put(h){app.innerHTML=h;window.scrollTo(0,0)}
+/* ---- เมนูหลัก แผนที่ ตู้เสื้อผ้า ---- */
+var SK=["#f3d5b5","#e0b48f","#c68a5e","#8d5a3b","#5a3825"],HC=["#1a1410","#5a3a22","#d9b54a","#b5442d"],HN=["ซอยสั้น","ปาดข้าง","ผมยาว","หยิกฟู","เกรียน"],HCN=["ดำ","น้ำตาล","บลอนด์","แดง"];
+var IT=[["เสื้อซ้อมสโมสร",0,"#2b7b4b"],["เสื้อยืดขาว",15,"#f4f4f0"],["ฮู้ดดำ",45,"#22262b"],["เสื้อเชิ้ตลายดอก",60,"#d6453d"],["แจ็กเก็ตหนัง",160,"#4a3326"],["เสื้อแบรนด์ดัง",320,"#7a3bd6"],["แว่นกันแดด",40],["สร้อยทอง",120]];
+var L={skin:1,hs:0,hc:0};
+function av(l,tp,wa){var sk=SK[l.skin],c=HC[l.hc],h=[
+'<path d="M34 46Q36 20 60 20Q86 20 86 46Q76 34 60 34Q44 34 34 46Z" fill="'+c+'"/>',
+'<path d="M33 48Q30 18 62 18Q92 20 87 50Q80 30 58 32Q44 34 33 48Z" fill="'+c+'"/>',
+'<path d="M32 62Q24 14 60 16Q96 14 88 62L84 80 80 40Q60 30 40 40L36 80Z" fill="'+c+'"/>',
+'<g fill="'+c+'"><circle cx="38" cy="32" r="14"/><circle cx="60" cy="24" r="16"/><circle cx="82" cy="32" r="14"/><circle cx="30" cy="48" r="9"/><circle cx="90" cy="48" r="9"/></g>',
+'<path d="M36 44Q38 24 60 24Q82 24 84 44Q72 36 60 36Q48 36 36 44Z" fill="'+c+'" opacity=".55"/>'][l.hs];
+return '<svg viewBox="0 0 120 130" style="width:100%;display:block" role="img" aria-label="ตัวละครของคุณ"><rect width="120" height="130" rx="10" fill="#cfe3d3"/><path d="M14 130Q16 92 60 88Q104 92 106 130Z" fill="'+IT[tp][2]+'" stroke="#14231a" stroke-width="2"/><rect x="50" y="72" width="20" height="20" fill="'+sk+'"/><ellipse cx="60" cy="52" rx="25" ry="29" fill="'+sk+'" stroke="#14231a" stroke-width="2"/><circle cx="35" cy="54" r="5" fill="'+sk+'"/><circle cx="85" cy="54" r="5" fill="'+sk+'"/>'+h+'<circle cx="50" cy="54" r="2.6" fill="#14231a"/><circle cx="70" cy="54" r="2.6" fill="#14231a"/><path d="M52 66Q60 72 68 66" stroke="#14231a" stroke-width="2" fill="none"/>'+(wa.indexOf(6)>=0?'<rect x="42" y="49" width="16" height="9" rx="3" fill="#14231a"/><rect x="62" y="49" width="16" height="9" rx="3" fill="#14231a"/><path d="M58 53H62" stroke="#14231a" stroke-width="2"/>':'')+(wa.indexOf(7)>=0?'<path d="M46 90Q60 108 74 90" stroke="#f2c230" stroke-width="3" fill="none"/>':'')+'</svg>'}
+function looks(n,c,p){var hs=[];function bt(l,f,cl,st){hs.push(f);return '<button data-i="'+(hs.length-1)+'" class="'+(cl||"")+'" style="'+(st||"")+'">'+l+'</button>'}
+var sk=SK.map(function(k,i){return bt("&nbsp;",function(){L.skin=i;looks(n,c,p)},"","width:44px;flex:none;padding:10px;background:"+k+";border:"+(i==L.skin?"4px solid #f2c230":"2px solid #14231a"))}).join(""),
+st=HN.map(function(k,i){return bt(k,function(){L.hs=i;looks(n,c,p)},i==L.hs?"on":"")}).join(""),
+co=HCN.map(function(k,i){return bt(k,function(){L.hc=i;looks(n,c,p)},i==L.hc?"on":"")}).join(""),
+ok=bt("ยืนยันหน้าตา",function(){roll(n,c,p)},"main","text-align:center;margin-top:16px");
+H=hs;put('<div class="card"><h2>หน้าตานักเตะ</h2><div style="width:130px;margin:8px auto">'+av(L,0,[])+'</div><p>สีผิว</p><div class="row">'+sk+'</div><p>ทรงผม</p><div class="g" style="grid-template-columns:1fr 1fr 1fr">'+st+'</div><p>สีผม</p><div class="g" style="grid-template-columns:1fr 1fr 1fr 1fr">'+co+'</div>'+ok+'</div>')}
+function cash(){return "$"+Math.round(S.cash*1000)+"K"}
+function hub(){put(head()+'<div class="card"><h2>เมนูหลัก</h2><p>นัดถัดไป: <b>พบ '+S.cal[S.wk].o+'</b> ('+(S.cal[S.wk].h?"เหย้า":"เยือน")+') · ความแรง '+S.cal[S.wk].s+'<br>🎯 '+S.goal.t+' ('+gp()+'/'+S.goal.n+')</p><p class="mu">สัปดาห์ที่ '+(S.wk+1)+'/5 · เวลาว่างเหลือ '+S.ap+' ช่วง · เงิน '+cash()+' · ความล้า '+S.fat+'%'+(saveG()?' · 💾 บันทึกแล้ว':' · ⚠️ บันทึกไม่ได้')+(S.inj>0?' · 🩹 บาดเจ็บ พักอีก '+S.inj+' นัด':'')+'</p>'+B([["▶ ไปแมตช์สัปดาห์นี้",week2,"","main"],["🗺️ แผนที่เมือง",map,"ไปห้าง ร้านตัดผม คลับ บ้าน และอื่นๆ"],["👕 ตู้เสื้อผ้าและหน้าตา",ward,"เปลี่ยนชุดที่ซื้อมา"],["📱 โทรศัพท์"+(unr()?" 🔴"+unr():""),phone,"ข้อความ ปฏิทิน โซเชียล หาคู่ เทรนเนอร์ รถ บ้าน"],["📇 การ์ดนักเตะ",card,"ค่าพลัง สถิติ สัญญา"]])+'</div>')}
+function enter(fn){if(S.ap<1)return put(head()+'<div class="card"><p>ไม่มีเวลาว่างแล้ว ไปเตรียมตัวลงสนามเถอะ</p>'+B([["กลับเมนู",hub,"","main"]])+'</div>');S.ap--;fn()}
+var LC=[["ห้างสรรพสินค้า","🛍️",24,14,shop],["ร้านตัดผม","💈",86,14,cut],["คลับบาร์","🍸",170,14,bar],["ร้านอาหาร","🍜",232,14,eat],["บ้าน","🏠",24,104,home],["ยิมส่วนตัว","🏋️",86,104,gym],["โรงพยาบาล","🏥",170,104,hosp],["สนามหมู่บ้าน","⚽",232,104,park]];
+function map(){var s='<svg viewBox="0 0 300 160" style="width:100%;border-radius:8px;display:block" role="group" aria-label="แผนที่เมือง"><rect width="300" height="160" fill="#bcd9a8"/><rect y="68" width="300" height="16" fill="#6b7280"/><rect x="146" width="16" height="160" fill="#6b7280"/><path d="M0 76H300M154 0V160" stroke="#fff" stroke-dasharray="6 5" stroke-width="1.2"/>';H=[];
+LC.forEach(function(l,i){H.push(function(){enter(l[4])});s+='<g data-i="'+i+'" style="cursor:pointer"><rect x="'+l[2]+'" y="'+l[3]+'" width="52" height="50" rx="5" fill="#f4e9d0" stroke="#14231a" stroke-width="1.2"/><text x="'+(l[2]+26)+'" y="'+(l[3]+26)+'" font-size="22" text-anchor="middle">'+l[1]+'</text><text x="'+(l[2]+26)+'" y="'+(l[3]+43)+'" font-size="7" text-anchor="middle" fill="#14231a">'+l[0]+'</text></g>'});
+H.push(hub);put(head()+'<div class="card"><h2>แผนที่เมือง</h2><p class="mu">เวลาว่างเหลือ '+S.ap+' ช่วง · แตะสถานที่เพื่อไป</p>'+s+'</svg><button data-i="'+(H.length-1)+'" style="margin-top:10px">← กลับเมนู</button></div>')}
+function pl(t,ic,tx,o){put(head()+'<div class="card"><h2>'+ic+' '+t+'</h2><p>'+tx+'</p>'+B(o.concat([["กลับแผนที่",map]]))+'</div>')}
+function done(m){put(head()+'<div class="card"><p>'+m+'</p>'+B([["กลับแผนที่",map,"","main"],["กลับเมนู",hub]])+'</div>')}
+function P(k,f,m){return function(){if(S.cash<k/1e3)return done("เงินไม่พอ (ต้องใช้ $"+k+"K)");S.cash-=k/1e3;fx(f);S.inj=Math.max(0,S.inj);done(m)}}
+function shop(m){var o=[];IT.forEach(function(it,i){if(S.own.indexOf(i)<0)o.push([it[0]+" · $"+it[1]+"K",function(){if(S.cash<it[1]/1e3)return shop("เงินไม่พอ!");S.cash-=it[1]/1e3;S.own.push(i);fx({mor:3});shop("ซื้อ"+it[0]+"แล้ว ไปเปลี่ยนใส่ได้ที่ตู้เสื้อผ้า")}])});
+pl("ห้างสรรพสินค้า","🛍️",(m||"เลือกซื้อเสื้อผ้าและของแต่งตัวได้เลย")+" · เงินคุณ "+cash()+(o.length?"":" · ซื้อครบทุกอย่างแล้ว"),o)}
+function cut(){pl("ร้านตัดผม","💈","ช่างถามว่าวันนี้อยากเปลี่ยนลุคแบบไหน",HN.map(function(n,i){return["ทรง"+n+" · $10K",function(){if(S.cash<.01)return done("เงินไม่พอ");S.cash-=.01;S.look.hs=i;fx({mor:4});done("ช่างจัดทรง"+n+"ให้ ดูดีขึ้นเยอะ")}]}).concat(HCN.map(function(n,i){return["ย้อมสี"+n+" · $15K",function(){if(S.cash<.015)return done("เงินไม่พอ");S.cash-=.015;S.look.hc=i;fx({mor:4});done("สีผมใหม่เข้ากับคุณมาก")}]})))}
+function bar(){pl("คลับบาร์","🍸","เสียงเพลงดังสนั่น เพื่อนๆ ชวนฉลอง",[["ปาร์ตี้เต็มที่ · $25K",function(){if(S.cash<.025)return done("เงินไม่พอ");S.cash-=.025;var sc=Math.random()<.3;fx({mor:sc?4:12,phys:-2});done(sc?"มีคนแอบถ่ายคลิปคุณลงโซเชียล แฟนบอลวิจารณ์หนัก":"สนุกสุดเหวี่ยง แต่ตื่นมาตัวหนักนิดหน่อย")}],["นั่งจิบน้ำผลไม้คุยกับเพื่อน · $5K",P(5,{mor:4},"บรรยากาศดี ได้ผ่อนคลาย")]])}
+function eat(){pl("ร้านอาหาร","🍜","กลิ่นหอมโชยมาจากครัว",[["มื้อบำรุงกำลัง · $5K",P(5,{phys:1,mor:4},"อิ่มอร่อย ร่างกายสดชื่น")],["เลี้ยงเพื่อนร่วมทีม · $20K",P(20,{mor:8,pass:1},"เพื่อนๆ ซึ้งใจ เคมีในทีมดีขึ้น")]])}
+function home(){pl("บ้าน","🏠","ที่ที่ใจสงบที่สุด",[["นอนพักผ่อน",function(){fx({mor:10+S.home*2});S.fat=cl(S.fat-25-S.home*8,0,100);if(S.inj>0)S.inj--;done("หลับสนิท รู้สึกฟื้นตัวขึ้น")}],["วิดีโอคอลหาครอบครัว",P(0,{mor:8},"ได้ยินเสียงพ่อแม่ ใจฟูขึ้น")]])}
+function gym(){var k={ST:"shoot",MF:"pass",DF:"def"}[S.pos],f={};f[k]=rnd(1,3);pl("ยิมส่วนตัว","🏋️","เทรนเนอร์ส่วนตัวรออยู่แล้ว",[["เวทและคาร์ดิโอ · $8K",function(){P(8,{phys:rnd(1,3)},"กล้ามเนื้อแน่นขึ้น")()}],["ซ้อมเฉพาะตำแหน่ง · $8K",P(8,f,"ฝึกจุดอ่อนจนเหงื่อโชก")]])}
+function hosp(){pl("โรงพยาบาล","🏥","ทีมแพทย์ยินดีให้บริการ",[["ตรวจและรักษาเต็มรูปแบบ · $30K",P(30,{inj:-1,phys:1},"ทีมแพทย์ดูแลอย่างดี อาการดีขึ้น")]])}
+function park(){pl("สนามหมู่บ้าน","⚽","เด็กๆ ชวนคุณลงไปเตะด้วย",[["เตะบอลกับเด็กๆ",P(0,{mor:6,drib:1},"เสียงหัวเราะของเด็กๆ ทำให้คุณนึกถึงวันแรกที่รักฟุตบอล")]])}
+function ward(){var o=[];S.own.forEach(function(i){o.push([(i<6?S.top==i:S.wa.indexOf(i)>=0)?"✅ "+IT[i][0]:IT[i][0],function(){if(i<6)S.top=i;else{var k=S.wa.indexOf(i);k>=0?S.wa.splice(k,1):S.wa.push(i)}ward()}])});o.push(["กลับเมนู",hub,"","main"]);
+put(head()+'<div class="card"><h2>👕 ตู้เสื้อผ้า</h2><div style="width:150px;margin:6px auto">'+av(S.look,S.top,S.wa)+'</div><p class="mu" style="text-align:center">ซื้อของใหม่ได้ที่ห้างในแผนที่ · เปลี่ยนทรงผมที่ร้านตัดผม</p>'+B(o)+'</div>')}
+function card(){var o=ovr(),g=o>=80?"#e7c35a":o>=65?"#c9ced6":"#c58a5a",sty=Math.round(S.own.reduce(function(a,i){return a+IT[i][1]},0)/10);
+put('<div class="card" style="background:linear-gradient(160deg,'+g+',#f5f2e6);color:#14231a"><div style="display:flex;gap:14px;align-items:center"><div style="width:100px;flex:none">'+av(S.look,S.top,S.wa)+'</div><div><div style="font:800 44px Kanit,sans-serif;line-height:1">'+o+'</div><b>'+PN[S.pos]+'</b><div style="font:700 18px Kanit,sans-serif">'+S.name+'</div><small>'+S.country+' · อายุ '+S.age+'</small></div></div><div class="row" style="margin-top:10px">'+Object.keys(ST).map(function(k){return '<div class="st">'+ST[k]+' <b>'+S.s[k]+'</b></div>'}).join("")+'</div></div><div class="card"><div class="meta"><span>ทีม <b>'+S.club.n+'</b></span><span>บทบาท <b>'+R[S.role]+'</b></span><span>สัญญาเหลือ <b>'+S.yrs+'</b> ปี</span><span>ค่าเหนื่อย <b>$'+S.wage.toLocaleString()+'/สัปดาห์</b></span></div><div class="meta"><span>ลงสนาม <b>'+S.apps+'</b></span><span>ประตู <b>'+S.goals+'</b></span><span>แอสซิสต์ <b>'+S.ast+'</b></span><span>ถ้วย <b>'+S.cups+'</b></span><span>คะแนนสไตล์ <b>'+sty+'</b></span></div>'+B([["กลับเมนู",hub,"","main"]])+'</div>')}
+/* ---- โทรศัพท์ ห้าง แผนที่ใหม่ ก่อนแมตช์ ---- */
+var NX={ST:"MF",MF:"DF",DF:"ST"},CARS=[["สกูตเตอร์มือสอง",3],["ฮอนด้า ซิตี้มือสอง",15],["SUV ครอบครัว",45],["สปอร์ตคูเป้",180],["ซูเปอร์คาร์",450]],HOMES=[["ห้องเช่าเล็กๆ",0],["คอนโดใกล้สนามซ้อม",80],["บ้านเดี่ยวมีสระว่ายน้ำ",350],["คฤหาสน์ริมทะเล",1500]],TRN=[["ไม่มี",0],["เทรนเนอร์ท้องถิ่น",5],["เทรนเนอร์มืออาชีพ",15],["เทรนเนอร์ระดับโลก",40]],NM=["มิน","ฟ้า","ใบเตย","ออม","เจน","นาตาลี","บีม","ปัน","ต้น","ไอซ์"],JB=["นางแบบ","พยาบาล","ครูสอนภาษา","เจ้าของคาเฟ่","นักศึกษาศิลปะ","นักร้องอินดี้","เทรนเนอร์ฟิตเนส"],TR=["ชอบดูบอลด้วยกัน","รักสัตว์เลี้ยง","ชอบเที่ยวทะเล","อ่านหนังสือทุกคืน","ทำอาหารเก่งมาก"];
+function sy(){return Math.round(S.own.reduce(function(a,i){return a+IT[i][1]},0)/10+CARS[S.car][1]/10+HOMES[S.home][1]/20)}
+function pb(pl){var a=[[pl?"ลงเล่นแมตช์":"ดูการแข่งขัน",pl?mom:fin,"","main"]];
+if(pl&&S.inj<1){a.push(["ขอโค้ชนั่งสำรองเพื่อพัก",function(){if(Math.random()<.7){m.pl=0;S.fat=cl(S.fat-35,0,100);S.coachMsg="โค้ชอนุญาตให้พักแมตช์นี้";fin()}else{S.coachMsg="โค้ชปฏิเสธ ทีมต้องการคุณ";mom()}},"ลดความล้า แต่ไม่ได้ลงเล่น (โค้ชอาจปฏิเสธ)"]);
+a.push(["ขอเปลี่ยนไปเล่น"+PN[NX[S.pos]],function(){S.coachMsg=Math.random()<.5?(S.pos=NX[S.pos],"โค้ชยอมให้ลองตำแหน่งใหม่"):"โค้ชไม่เห็นด้วย ให้เล่นตำแหน่งเดิม";pre()},"โค้ชอาจไม่เห็นด้วย และค่าพลังอาจไม่เหมาะกับตำแหน่งใหม่"])}
+return a}
+function ph(t,h){return head()+'<div class="card" style="background:#14231a;border-radius:28px;padding:10px"><div style="--card:#fff;--ink:#14231a;--mute:#5d6b61;--line:#d9d6c5;background:#f3f1e7;color:#14231a;border-radius:20px;padding:12px"><div class="meta" style="justify-content:space-between;margin:0 0 6px"><span><b>'+t+'</b></span><span>📶 🔋</span></div>'+h+'</div></div>'}
+function once(k,f){if(S.pf[k])return put(ph("ข้อความ",'<p>ทำไปแล้วในสัปดาห์นี้ รอสัปดาห์หน้านะ</p>'+B([["กลับ",phone,"","main"]])));S.pf[k]=1;f()}
+function pr(t,m2,f){fx(f);put(ph(t,'<p>'+m2+'</p>'+B([["กลับโทรศัพท์",phone,"","main"]])))}
+function phone(){put(ph("📱 โทรศัพท์",'<p class="mu">ผู้ติดตาม '+S.fol.toLocaleString()+' · เพื่อน '+S.fr+' · แฟน '+(S.mate?S.mate.n:"ยังไม่มี")+'</p>'+B([["✉️ กล่องข้อความ"+(unr()?" 🔴"+unr():""),inbox],["📅 ปฏิทินและเป้าหมาย",calv],["📞 โทรหาใครสักคน",call],["📸 ChitChat โซเชียล",soc],["💘 Spark หาคู่และเพื่อน",date],["🏋️ TrainMe จ้างเทรนเนอร์",trn],["🚗 CarMart ซื้อรถ",cars],["🏠 HomeFind ซื้อบ้าน",homes],["ปิดโทรศัพท์",hub,"","main"]])))}
+function call(){var k={ST:"shoot",MF:"pass",DF:"def"}[S.pos],f={mor:2};f[k]=1;
+var o=[["แม่",function(){once("mom",function(){pr("แม่","แม่ดีใจมากที่ลูกโทรมา บอกให้ดูแลสุขภาพด้วย",{mor:8})})},"กำลังใจ +8"],["เอเยนต์",function(){once("ag",function(){S.scout=1;pr("เอเยนต์","เอเยนต์รับปากจะเปิดตลาดให้ ทีมที่สนใจจะเพิ่มขึ้นตอนเซ็นสัญญา",{mor:1})})},"ได้ข้อเสนอสโมสรเพิ่ม"],["โค้ชเก่าสมัยเด็ก",function(){once("old",function(){pr("โค้ชเก่า","โค้ชให้คำแนะนำเทคนิคที่ใช้ได้จริง",f)})},"ค่าพลังหลักของตำแหน่ง +1"]];
+if(S.mate)o.push([S.mate.n+" (แฟน)",function(){once("mt",function(){pr(S.mate.n,"คุยกันยาว ใจชื้นขึ้นเยอะ",{mor:6})})},"กำลังใจ +6"]);
+o.push(["กลับ",phone]);put(ph("📞 รายชื่อ",B(o)))}
+function pst(g,mo,r){return function(){once("soc",function(){var b=Math.random()<r;if(b)g=-rnd(200,800);S.fol=Math.max(0,S.fol+g);pr("โพสต์แล้ว",b?"ถูกทัวร์ลงเพราะรูปปาร์ตี้ ผู้ติดตามลดลง "+(-g):"ได้ไลก์ "+Math.round(S.fol*rnd(4,12)/100+rnd(5,50)).toLocaleString()+" ผู้ติดตามเพิ่ม "+g,{mor:b?-5:mo})})}}
+function soc(){put(ph("📸 ChitChat",'<p class="mu">ผู้ติดตาม <b>'+S.fol.toLocaleString()+'</b> · โพสต์ได้สัปดาห์ละครั้ง ยิ่งดังยิ่งมีรายได้ทุกสัปดาห์</p>'+B([["โพสต์รูปซ้อมหนัก 💪",pst(rnd(100,400),2,0)],["โพสต์รูปปาร์ตี้ 🍸",pst(rnd(300,1500),4,.3),"โตเร็วแต่เสี่ยงโดนทัวร์"],["โพสต์ลุคใหม่ 👕",pst(rnd(100,300)+sy()*15,3,0),"ยิ่งแต่งตัวดี ยิ่งโต"],["ตอบคอมเมนต์แฟนบอล",pst(rnd(50,200),4,0)],["กลับ",phone]])))}
+function date(){var o=[["ปัดหาคู่รัก",function(){swp(1)}],["ปัดหาเพื่อน",function(){swp(0)}]];if(S.mate)o.push(["ชวน"+S.mate.n+"ไปเดท · $20K",function(){once("dt",function(){if(S.cash<.02)return pr("เดท","เงินไม่พอ",{});S.cash-=.02;pr("เดท","มื้อค่ำโรแมนติก กลับบ้านมาอารมณ์ดีมาก",{mor:12})})}]);o.push(["กลับ",phone]);put(ph("💘 Spark",B(o)))}
+function swp(k){if(k&&S.mate)return pr("Spark","คุณมีแฟนอยู่แล้ว ไม่ควรหาเพิ่มนะ",{});var c={n:NM[rnd(0,9)],j:JB[rnd(0,6)],t:TR[rnd(0,4)]};
+put(ph("💘 Spark",'<p><b>'+c.n+'</b> · '+c.j+'</p><p class="mu">'+c.t+'</p>'+B([["ปัดขวา 💚",function(){once("sw",function(){var p=.3+Math.min(S.fol/3e5,.25)+sy()/500+(k?0:.15);if(Math.random()<p){if(k)S.mate=c;else S.fr++;pr("แมตช์!",k?"คุณกับ"+c.n+"เริ่มคุยกันจนกลายเป็นแฟน":c.n+"กลายเป็นเพื่อนสนิทคนใหม่",{mor:6})}else pr("ไม่แมตช์","อีกฝ่ายยังไม่ตอบกลับ",{mor:-1})})}],["ปัดซ้าย",function(){swp(k)}],["กลับ",date]])))}
+function trn(){put(ph("🏋️ TrainMe",'<p class="mu">ตอนนี้: '+TRN[S.tr][0]+' · ค่าจ้างหักทุกสัปดาห์ ผลฝึกซ้อมดีขึ้นตามระดับ</p>'+B(TRN.map(function(t,i){return[(S.tr==i?"✅ ":"")+t[0]+(t[1]?" · $"+t[1]+"K/สัปดาห์":""),function(){S.tr=i;trn()},i?"ฝึกซ้อมได้ผลเพิ่ม +"+i:"เลิกจ้าง"]}).concat([["กลับ",phone]]))))}
+function buy(t,A,key,ic){put(ph(ic+" "+t,'<p class="mu">เงินคุณ '+cash()+'</p>'+B(A.map(function(a,i){return[(S[key]==i?"✅ ":"")+a[0]+" · $"+a[1]+"K",function(){if(i<=S[key])return;if(S.cash<a[1]/1e3)return pr(t,"เงินไม่พอ",{});S.cash-=a[1]/1e3;S[key]=i;pr(t,"ซื้อ"+a[0]+"เรียบร้อย ชีวิตดีขึ้นเยอะ",{mor:6})}]}).concat([["กลับ",phone]]))))}
+function cars(){buy("CarMart",CARS,"car","🚗")}function homes(){buy("HomeFind",HOMES,"home","🏠")}
+function sto(t,ids,m2){var o=[];ids.forEach(function(i){if(S.own.indexOf(i)<0)o.push([IT[i][0]+" · $"+IT[i][1]+"K",function(){if(S.cash<IT[i][1]/1e3)return sto(t,ids,"เงินไม่พอ!");S.cash-=IT[i][1]/1e3;S.own.push(i);fx({mor:3});sto(t,ids,"ซื้อ"+IT[i][0]+"แล้ว ไปเปลี่ยนใส่ที่ตู้เสื้อผ้า")}])});
+o.push(["กลับโถงห้าง",shop]);put(head()+'<div class="card"><h2>'+t+'</h2><p>'+(m2||"ลองเลือกดูได้เลย")+(o.length<2?" · ซื้อครบทุกชิ้นแล้ว":"")+'</p>'+B(o)+'</div>')}
+function sport(){pl("SPORT ZONE","⚽","อุปกรณ์และอาหารเสริมนักกีฬา",[["เครื่องดื่มเกลือแร่ · $3K",P(3,{fat:-15},"ชุ่มคอ ความล้าลดลง")],["นวดกล้ามเนื้อ · $15K",P(15,{fat:-30,phys:1},"กล้ามเนื้อคลายตัว")]])}
+function food(){pl("FOOD COURT","🍔","มีทั้งอาหารจานด่วนและสลัดคลีน",[["สลัดอกไก่คลีน · $4K",P(4,{phys:1,mor:2},"อิ่มพอดี")],["ไก่ทอดชีสบอมบ์ · $4K",P(4,{mor:6,phys:-1},"อร่อยสะใจ แต่หนักท้องนิดหน่อย")]])}
+function cine(){pl("CINEPLEX","🎬","หนังใหม่เข้าโรงวันนี้",[["ดูหนังรอบค่ำ · $8K",P(8,{mor:9},"ดูหนังสนุก ผ่อนคลายสมอง")]])}
+function spa(){pl("SPA","💆","บรรยากาศเงียบสงบ",[["สปาและอบซาวน่า · $25K",P(25,{fat:-40,mor:6},"ร่างกายและจิตใจสดชื่นขึ้นมาก")]])}
+var MS=[["URBAN WEAR","👕","#d6453d",15,8,function(){sto("URBAN WEAR แฟชั่น",[1,2,3,4,5])}],["GOLD & CO","💍","#c9a227",113,8,function(){sto("GOLD & CO เครื่องประดับ",[6,7])}],["SPORT ZONE","⚽","#2b6cd6",211,8,sport],["FOOD COURT","🍔","#e8913a",15,96,food],["CINEPLEX","🎬","#7a3bd6",113,96,cine],["SPA","💆","#2b9d8f",211,96,spa]];
+function shop(m2){var s='<svg viewBox="0 0 300 150" style="width:100%;border-radius:8px;display:block" role="group" aria-label="แผนผังห้างสรรพสินค้า"><rect width="300" height="150" fill="#e9e4d6"/><rect y="60" width="300" height="30" fill="#f6f2e6"/><path d="M0 75H300" stroke="#d3cdb8" stroke-dasharray="3 4"/><circle cx="150" cy="75" r="11" fill="#7fc3e8" stroke="#fff" stroke-width="3"/><text x="150" y="79" font-size="11" text-anchor="middle">⛲</text><text x="292" y="78" font-size="7" fill="#5d6b61" text-anchor="end">ทางออก ➜</text>';H=[];
+MS.forEach(function(t,i){H.push(t[5]);s+='<g data-i="'+i+'" style="cursor:pointer"><rect x="'+t[3]+'" y="'+t[4]+'" width="74" height="46" fill="#fff" stroke="#14231a"/><rect x="'+t[3]+'" y="'+t[4]+'" width="74" height="12" fill="'+t[2]+'"/><text x="'+(t[3]+37)+'" y="'+(t[4]+9)+'" font-size="7" font-weight="700" fill="#fff" text-anchor="middle">'+t[0]+'</text><text x="'+(t[3]+37)+'" y="'+(t[4]+35)+'" font-size="20" text-anchor="middle">'+t[1]+'</text></g>'});
+H.push(map);put(head()+'<div class="card"><h2>🛍️ ห้างสรรพสินค้า</h2><p class="mu">'+(m2||"แตะร้านเพื่อเข้าไป")+' · เงินคุณ '+cash()+'</p>'+s+'</svg><button data-i="'+(H.length-1)+'" style="margin-top:10px">← ออกจากห้าง</button></div>')}
+var MPL=[["ห้างสรรพสินค้า","🛍️",30,44,shop,"#d6453d"],["ร้านตัดผม","💈",76,44,cut,"#5b8def"],["สนามหมู่บ้าน","⚽",164,44,park,"#3fae6a"],["ร้านอาหาร","🍜",252,44,eat,"#e8913a"],["คลับบาร์","🍸",294,44,bar,"#b04fd6"],["บ้านคุณ","🏠",52,148,home,"#f2c230"],["ยิมส่วนตัว","🏋️",164,148,gym,"#d6453d"],["โรงพยาบาล","🏥",272,148,hosp,"#2b9d8f"]];
+function map(){var s='<svg viewBox="0 0 320 190" style="width:100%;border-radius:8px;display:block" role="group" aria-label="แผนที่เมือง"><defs><pattern id="bd" width="14" height="12" patternUnits="userSpaceOnUse"><rect x="1" y="1" width="11" height="9" rx="1" fill="#46586a"/></pattern></defs><rect width="320" height="190" fill="#2b3a47"/><rect x="6" y="6" width="92" height="76" fill="url(#bd)"/><rect x="126" y="6" width="76" height="76" fill="#2f6b4a"/><circle cx="140" cy="20" r="6" fill="#3f8a5f"/><circle cx="190" cy="68" r="7" fill="#3f8a5f"/><rect x="230" y="6" width="84" height="76" fill="url(#bd)"/><rect x="6" y="110" width="92" height="76" fill="url(#bd)"/><rect x="126" y="110" width="76" height="76" fill="url(#bd)"/><rect x="230" y="110" width="84" height="76" fill="url(#bd)"/><g fill="#6b7785"><rect y="88" width="320" height="16"/><rect x="104" width="16" height="190"/><rect x="208" width="16" height="190"/></g><path d="M0 96H320M112 0V190M216 0V190" stroke="#fff" stroke-opacity=".6" stroke-dasharray="6 5"/><text x="6" y="94" font-size="5.5" fill="#fff">ถนนใหญ่</text><text x="308" y="14" font-size="7" fill="#fff" text-anchor="end">N ↑</text>';
+[["#e8e8e8","M-10 92H330",9],["#d6453d","M330 100H-10",11],["#f2c230","M112 -10V200",10],["#3b6fd6","M216 200V-10",8]].forEach(function(c){s+='<rect x="-4" y="-2" width="8" height="4" rx="1" fill="'+c[0]+'"><animateMotion path="'+c[1]+'" dur="'+c[2]+'s" rotate="auto" repeatCount="indefinite"/></rect>'});
+s+='<g transform="translate(52,172)"><circle r="6" fill="#f2c230"><animate attributeName="r" values="4;14" dur="1.6s" repeatCount="indefinite"/><animate attributeName="opacity" values=".7;0" dur="1.6s" repeatCount="indefinite"/></circle><path d="M0 -6L5 5L0 2L-5 5Z" fill="#f2c230" stroke="#14231a"/></g>';H=[];
+MPL.forEach(function(l,i){H.push(function(){enter(l[4])});s+='<g data-i="'+i+'" style="cursor:pointer"><circle cx="'+l[2]+'" cy="'+l[3]+'" r="11" fill="'+l[5]+'" stroke="#fff" stroke-width="1.5"/><text x="'+l[2]+'" y="'+(l[3]+4.5)+'" font-size="13" text-anchor="middle">'+l[1]+'</text><text x="'+l[2]+'" y="'+(l[3]+22)+'" font-size="6.5" text-anchor="middle" fill="#fff" stroke="#14231a" stroke-width="1.6" paint-order="stroke">'+l[0]+'</text></g>'});
+H.push(hub);put(head()+'<div class="card"><h2>แผนที่เมือง</h2><p class="mu">เวลาว่างเหลือ '+S.ap+' ช่วง · แตะจุดบนแผนที่เพื่อไป</p>'+s+'</svg><button data-i="'+(H.length-1)+'" style="margin-top:10px">← กลับเมนู</button></div>')}
+/* ---- เซฟเกม กล่องข้อความ ปฏิทิน เป้าหมาย ---- */
+var KEY="football-career-save-v1";
+function saveG(){try{localStorage.setItem(KEY,JSON.stringify(S));return 1}catch(e){return 0}}
+function loadG(){try{var d=JSON.parse(localStorage.getItem(KEY));return d&&d.club&&d.s?d:null}catch(e){return null}}
+function delG(){try{localStorage.removeItem(KEY)}catch(e){}}
+function start(){var d=loadG();if(!d)return start0();
+put('<div class="card"><h2>เส้นทางนักเตะ</h2><p>มีเกมที่บันทึกไว้: <b>'+d.name+'</b> ('+PN[d.pos]+' อายุ '+d.age+' · '+d.club.n+')</p>'+B([["▶ เล่นต่อ",function(){S=d;L=S.look;S.inb=S.inb||[];S.sg=S.sg||0;S.sa=S.sa||0;S.sp=S.sp||0;S.pf=S.pf||{};if(!S.cal||!S.goal)seas();hub()},"","main"],["เริ่มอาชีพใหม่ (ลบเซฟเดิม)",function(){delG();start0()}]])+'</div>')}
+function seas(){var c=CT[S.country].c.filter(function(n){return"อะคาเดมี "+n!==S.club.n&&n!==S.club.n}).sort(function(){return Math.random()-.5}),g,pn=S.role==2?4:S.role==1?3:2;
+S.cal=[];for(var i=0;i<5;i++)S.cal.push({o:c[i%c.length],s:cl(S.club.s+rnd(-14,14),30,92),h:i%2==0,r:""});
+S.sg=0;S.sa=0;S.sp=0;
+if(S.role<1||Math.random()<.4)g={k:"p",n:pn,t:"ลงเล่นอย่างน้อย "+pn+" นัด"};
+else if(S.pos=="ST"){var n=2+rnd(0,1);g={k:"g",n:n,t:"ยิงให้ได้ "+n+" ประตู"}}
+else if(S.pos=="MF")g={k:"a",n:2,t:"แอสซิสต์ 2 ครั้ง"};else g={k:"w",n:3,t:"ทีมชนะอย่างน้อย 3 จาก 5 นัด"};
+S.goal=g}
+function gp(){var g=S.goal;return g.k=="g"?S.sg:g.k=="a"?S.sa:g.k=="p"?S.sp:S.sea.w}
+function chkGoal(){var g=S.goal,b=Math.round(S.wage*4)/1e6;
+if(gp()>=g.n){fx({mor:8});S.cash+=b;S.fol+=1000;return"🎯 เป้าหมายฤดูกาล ("+g.t+") สำเร็จ! โบนัส $"+Math.round(b*1000)+"K"}
+fx({mor:-5});return"🎯 เป้าหมายฤดูกาล ("+g.t+") ไม่สำเร็จ ทำได้ "+gp()+"/"+g.n}
+function add(f,t,k){S.inb.unshift({f:f,t:t,r:0,k:k||0});S.inb=S.inb.slice(0,12)}
+function unr(){return S.inb.filter(function(x){return!x.r}).length}
+function mail(){var f=S.cal[S.wk];
+if(S.wk==0)add("โค้ช","ฤดูกาลใหม่! เป้าหมายของคุณ: "+S.goal.t+" นัดเปิดฤดูกาลพบ "+f.o+" ("+(f.h?"เหย้า":"เยือน")+")");
+else add("โค้ช",S.fat>70?"ดูคุณเหนื่อยมาก ก่อนนัดพบ "+f.o+" ลองขอพักสักนัดนะ":"สัปดาห์นี้พบ "+f.o+" ("+(f.h?"เหย้า":"เยือน")+") ทีมนี้ความแรง "+f.s+" ทีมเรา "+S.club.s+" เตรียมตัวให้พร้อม");
+if(S.yrs==1&&S.wk==0)add("เอเยนต์","สัญญาของคุณเหลืออีก 1 ปี ผมกำลังคุยกับทีมอื่นไว้ให้");
+if(S.inj>0)add("ทีมแพทย์","คุณยังบาดเจ็บอยู่ พักอีก "+S.inj+" นัด อย่าฝืนซ้อมหนัก");
+if(Math.random()<.25)add("ผู้จัดการสปอนเซอร์","สนใจให้คุณเป็นพรีเซนเตอร์ ค่าตัวประมาณ $"+Math.max(5,Math.round(S.fol/2000))+"K",1)}
+function inbox(){var o=S.inb.map(function(x,i){return[(x.r?"":"🔴 ")+x.f,function(){x.r=1;msg(i)},x.t.slice(0,34)+(x.t.length>34?"…":"")]});o.push(["กลับ",phone,"","main"]);
+put(ph("✉️ กล่องข้อความ",S.inb.length?B(o):'<p class="mu">ยังไม่มีข้อความ</p>'+B([["กลับ",phone,"","main"]])))}
+function msg(i){var x=S.inb[i],o=[];
+if(x.k==1){var v=Math.max(5,Math.round(S.fol/2000));o.push(["รับข้อเสนอ +$"+v+"K",function(){x.k=0;x.t+=" (รับข้อเสนอแล้ว)";S.cash+=v/1e3;fx({mor:3});S.fol+=200;msg(i)}]);o.push(["ปฏิเสธ",function(){x.k=0;x.t+=" (คุณปฏิเสธไปแล้ว)";msg(i)}])}
+o.push(["กลับกล่องข้อความ",inbox,"","main"]);put(ph(x.f,'<p>'+x.t+'</p>'+B(o)))}
+function calv(){var g=S.goal,rows=S.cal.map(function(f,i){var d=f.s-S.club.s,lv=d>6?"ยาก":d<-6?"ง่าย":"สูสี";return'<p style="margin:4px 0;'+(i==S.wk?'font-weight:700':'')+'">'+(i<S.wk?"✔":i==S.wk?"▶":"○")+' นัด '+(i+1)+' · '+(f.h?"เหย้า":"เยือน")+' พบ '+f.o+' · '+lv+(f.r?' · ผล '+f.r:'')+'</p>'}).join("");
+put(ph("📅 ปฏิทินและเป้าหมาย",'<p><b>🎯 เป้าหมายฤดูกาล</b><br>'+g.t+' · ตอนนี้ '+gp()+'/'+g.n+'</p><p><b>ตารางแข่ง</b></p>'+rows+B([["กลับ",phone,"","main"]])))}
+/* ---- เริ่มเกม ---- */
+function start0(){var c="ไทย",p="ST";
+put('<div class="card"><h2>สร้างนักเตะ</h2><p class="mu">เลือกประเทศบ้านเกิดและตำแหน่ง แล้วดวงจะกำหนดชีวิตวัยเด็กของคุณ</p><input id="nm" maxlength="18" placeholder="ชื่อนักเตะ" aria-label="ชื่อนักเตะ"><p>ประเทศ</p><div class="g">'+B(Object.keys(CT).map(function(k,i){return[k,function(){c=k;sel(i)},"",i?"":"on"]}))+'</div><p>ตำแหน่ง</p><div class="g" style="grid-template-columns:1fr 1fr 1fr">'+B([["กองหน้า",function(){p="ST";sel(5)},"","on"],["กองกลาง",function(){p="MF";sel(6)}],["กองหลัง",function(){p="DF";sel(7)}]])+'</div><button class="main" id="go" style="text-align:center;margin-top:16px">เริ่มชีวิตนักเตะ</button></div>');
+var cb=[],bs=app.querySelectorAll("button");
+var hs=[];function sel(i){var g=i<5?[0,5]:[5,8];for(var j=g[0];j<g[1];j++)bs[j].className=j==i?"on":""}
+var inner=H.slice();H=[];for(var j=0;j<8;j++)H[j]=inner[j<5?j:j-5];
+H=inner.slice(0,0);
+// ผูกปุ่มใหม่ให้ถูกกลุ่ม
+bs=[].slice.call(app.querySelectorAll("button[data-i]"));
+var map=[function(){c=Object.keys(CT)[0];sel(0)}];
+bs.forEach(function(b,j){b.onclick=function(ev){ev.stopPropagation();if(j<5){c=Object.keys(CT)[j];sel(j)}else{p=["ST","MF","DF"][j-5];sel(j)}}});
+document.getElementById("go").onclick=function(){looks(document.getElementById("nm").value.trim()||"นักเตะน้องใหม่",c,p)}}
+function roll(n,c,p){var T=rnd(0,36),w=WEALTH[rnd(0,2)],h=CHILD[rnd(0,5)];
+S={name:n,country:c,pos:p,age:16,s:{},mor:60,cash:.03,look:L,own:[0],top:0,wa:[],ap:2,fat:0,car:0,home:0,tr:0,fol:300,mate:null,fr:0,pf:{},inb:[],sg:0,sa:0,sp:0,cal:null,goal:null,club:null,role:0,wage:0,yrs:0,goals:0,ast:0,apps:0,cups:0,inj:0,wk:0,rs:0,scout:0,T:T,sea:{w:0,d:0,l:0},hist:[]};
+for(var k in ST)S.s[k]=rnd(24,36)+Math.round(T/3);
+var key={ST:["shoot","drib"],MF:["pass","drib"],DF:["def","phys"]}[p];key.forEach(function(k){S.s[k]+=6});
+fx(w[1]);fx(h[1]);
+var stars=T>28?"★★★★★":T>20?"★★★★☆":T>12?"★★★☆☆":T>6?"★★☆☆☆":"★☆☆☆☆";
+put(head()+'<div class="card"><h2>ชีวิตวัยเด็ก</h2><p><b>'+w[0]+'</b> '+w[2]+'</p><p><b>'+h[0]+'</b> '+h[2]+'</p><p>พรสวรรค์ติดตัว <b>'+stars+'</b></p>'+B([["ดูว่าสโมสรไหนสนใจ",function(){sign(true)},"","main"]])+'</div>')}
+/* ---- ข้อเสนอ ---- */
+function pool(){var c=CT[S.country],a=c.c.map(function(n,i){return{n:n,l:S.country,s:Math.min(92,c.b+SB[i])}});
+if(S.age>=18&&ovr()>=58)FOR.forEach(function(n,i){a.push({n:n,l:"ต่างแดน",s:[84,80,77,74,72,70][i]})});return a}
+function sign(first){var o=ovr(),yg=S.age<18,n=o<42?2:o<52?3:4,L=[];
+var p=pool().map(function(c){return{n:(yg?"อะคาเดมี ":"")+c.n,l:c.l,s:c.s-(yg?20:0)}}).filter(function(c){return c.s<=o+(yg?14:10)&&(!S.club||c.n!==S.club.n)}).sort(function(){return Math.random()-.5});
+if(S.scout){n++;S.scout=0}
+L=p.slice(0,n);
+if(!L.length){var c0=pool()[5];L=[{n:(yg?"อะคาเดมี ":"")+c0.n,l:S.country,s:c0.s-(yg?20:0)}]}
+if(S.club&&S.yrs<=0)L.unshift({n:S.club.n,l:S.club.l,s:S.club.s,renew:1});
+var Z=L.map(function(c){var d=c.s-o,role=d>6?0:d>-2?1:2,wage=Math.round(Math.pow(c.s,4)/300*(yg?.15:1)*(c.renew?1.15:1)*(.85+Math.random()*.3)/100)*100,fee=c.renew||yg?0:Math.round(Math.pow(Math.max(c.s-35,1),2)/40*(.8+Math.random()*.4)),yrs=rnd(2,4);
+return[(c.renew?"ต่อสัญญากับ ":"")+c.n+" ("+c.l+")",function(){S.club=c;S.role=role;S.wage=wage;S.yrs=yrs;S.log=[];S.wk=0;S.rs=0;week()},"ค่าตัว "+(fee?"$"+fee+"M":"ไม่มี")+" · ค่าเหนื่อย $"+wage.toLocaleString()+"/สัปดาห์ · สัญญา "+yrs+" ปี · คาดว่าได้เป็น"+R[role]]});
+put(head()+'<div class="card"><h2>'+(first?"สโมสรที่สนใจคุณ":"ข้อเสนอสัญญาใหม่")+'</h2><p class="mu">ยิ่งฝีเท้าดี ยิ่งมีทีมสนใจมาก แต่ทีมใหญ่อาจให้คุณนั่งสำรอง</p>'+B(Z)+'</div>')}
+/* ---- สัปดาห์แข่ง ---- */
+function week(){if(S.wk>=5)return endSeason();S.ap=2;S.pf={};S.fat=cl(S.fat-15,0,100);S.cash=Math.max(0,S.cash+S.wage*10/1e6+S.fol/5e7-TRN[S.tr][1]/1e3);S.mor=cl(S.mor+(S.mate?3:0)+Math.min(S.fr,3),0,100);if(S.wk==0||!S.cal)seas();mail();hub()}
+function week2(){
+if(Math.random()<.55){var e=EV[rnd(0,EV.length-1)];
+return put(head()+'<div class="card"><h2>เหตุการณ์นอกสนาม</h2><p>'+e[0]+'</p>'+B(e[1].map(function(o){return[o[0],function(){fx(o[1]);put(head()+'<div class="card"><p>'+o[2]+'</p>'+B([["ไปต่อ",pre,"","main"]])+'</div>')}]}))+'</div>')}
+pre()}
+function pre(){var c=CT[S.country].c.filter(function(n){return"อะคาเดมี "+n!==S.club.n&&n!==S.club.n}),os=S.cal[S.wk].s;
+m={opp:S.cal[S.wk].o,os:os,i:0,r:6,g:0,a:0,c:0,n:0,pl:0};
+var pl=S.role==2?3:S.role==1?2:(Math.random()<.5?1:0);if(S.inj>0)pl=0;m.pl=pl;
+put(head()+'<div class="card"><h2>แมตช์ที่ '+(S.wk+1)+'/5</h2><p>พบ <b>'+m.opp+'</b> (ความแรง '+m.os+') · ทีมคุณ '+S.club.s+'</p>'+(S.inj>0?'<p>🩹 คุณบาดเจ็บ ต้องพักอีก '+S.inj+' นัด</p>':'<p class="mu">'+(pl?"คุณอยู่ในรายชื่อ "+R[S.role]+" ตำแหน่ง"+PN[S.pos]+" · ความล้า "+S.fat+"%"+(S.coachMsg?" · 💬 "+S.coachMsg:""):"โค้ชไม่ได้ใส่ชื่อคุณลงสนาม")+'</p>')+B(pb(pl))+'</div>')}
+function mom(){if(m.i>=m.pl)return fin();var q=MO[MP[S.pos][rnd(0,4)]],mn=[22,55,78][m.i]+rnd(0,8);
+if(S.role<2&&m.i==0)mn=rnd(60,75);
+put(head()+'<div class="card"><h2>นาทีที่ '+mn+'</h2>'+pitch(q.x,q.y,mn)+'<p><b>'+q.t+'</b></p>'+B(q.o.map(function(o){return[o[0],function(){act(o,q,mn)},"ความถนัด"+ST[o[1]]+" "+S.s[o[1]]]}))+'</div>')}
+function act(o,q,mn){var p=cl(.5+(S.s[o[1]]-o[2])/80+(S.mor-50)/300+(S.cal[S.wk].h?.03:0)-S.fat/400-(m.os-60)/250,.08,.92),ok=Math.random()<p,t=o[3],msg;
+if(t=="g"){if(ok){m.g++;m.r+=1.4;msg="⚽ ประตู! สนามระเบิดเสียงเชียร์"}else{m.r-=.2;msg="บอลไปไม่ถึงเป้า ผู้รักษาประตูปัดออก"}}
+else if(t=="a"){if(ok&&Math.random()<.75){m.a++;m.r+=1.1;msg="🎯 แอสซิสต์! เพื่อนซัดเข้าไป"}else{m.r-=.1;msg="เพื่อนรับบอลไม่ทัน เสียจังหวะ"}}
+else{if(ok){m.r+=.6;msg="🛡️ คุณสกัดไว้ได้ แฟนบอลปรบมือ"}else{m.c++;m.r-=.6;msg="พลาด! คู่แข่งเจาะเข้ามาได้"}}
+m.i++;var px=cl(q.x*3,40,270),py=cl(q.y*1.8,30,150),tg,bn,gy=rnd(-9,9),G="#f2c230",K="#14231a",RD="#d6453d";
+if(t=="g"){if(ok){tg=[297,90+gy,gy>=0?-12:12];bn=bnr("ประตู!",G,K)}else if(Math.random()<.6){tg=[286,90+gy,gy];bn=bnr("ถูกเซฟ!",RD,"#fff")}else{tg=[297,gy>0?44:136,0];bn=bnr("ยิงข้ามคาน",RD,"#fff")}}
+else if(t=="a"){tg=ok?[cl(px-14,14,286),cl(py+44,14,166)]:[px+24,py+14];bn=ok&&msg.indexOf("แอสซิสต์")>0?bnr("แอสซิสต์!",G,K):bnr("จ่ายพลาด",RD,"#fff")}
+else{tg=ok?[px-30,py-10]:[px+50,py+10];bn=ok?bnr("สกัดได้!",G,K):bnr("เสียประตู",RD,"#fff")}
+put(head()+'<div class="card">'+pitch(q.x,q.y,mn,tg,bn)+'<p><b>'+msg+'</b></p>'+B([["ต่อ",mom,"","main"]])+'</div>')}
+function fin(){var ps=m.pl>0,tg=Math.max(0,Math.round(1.1+(S.club.s-m.os)/28+rnd(-1,1)))+m.g+m.a,og=Math.max(0,Math.round(.9+(m.os-S.club.s)/28+rnd(-1,1)))+m.c,r=ps?cl(m.r,4,10):0,res=tg>og?"ชนะ":tg==og?"เสมอ":"แพ้";
+S.sea[tg>og?"w":tg==og?"d":"l"]++;S.cal[S.wk].r=tg+"-"+og+" ("+res+")";S.goals+=m.g;S.fol+=m.g*rnd(300,900)+(tg>og?200:0);S.ast+=m.a;S.sg+=m.g;S.sa+=m.a;if(ps){S.apps++;S.sp++;S.fat=cl(S.fat+25,0,100);if(Math.random()<.05+S.fat/700){S.inj=rnd(2,4);S.coachMsg="🩹 คุณบาดเจ็บระหว่างเกม พักประมาณ "+(S.inj-1)+" นัด"}}else S.fat=cl(S.fat-15,0,100);if(S.inj>0)S.inj--;
+var lg="";if(ps){if(r>=7.5)S.rs=Math.max(S.rs,0)+1;else if(r<5.8)S.rs=Math.min(S.rs,0)-1;
+if(S.rs>=2&&S.role<2){S.role++;S.rs=0;lg="⬆️ โค้ชเลื่อนคุณขึ้นเป็น"+R[S.role]}if(S.rs<=-2&&S.role>0){S.role--;S.rs=0;lg="⬇️ คุณถูกลดเหลือ"+R[S.role]}}
+var coach=!ps?"วันนี้ไม่ได้ลงสนาม ซ้อมให้หนักแล้วโอกาสจะมา":r>=7.5?"เล่นได้ยอดเยี่ยม ผมอยากให้ทั้งทีมเอาอย่างคุณ":r>=6.3?"เล่นได้ตามมาตรฐาน แต่ยังพัฒนาได้อีก":"เกมนี้ไม่ใช่วันของคุณ มาคุยกันหน่อย";
+put(head()+'<div class="card"><h2>จบเกม: '+tg+'-'+og+' ('+res+')</h2><p>'+(ps?'คะแนนฟอร์มของคุณ <b>'+r.toFixed(1)+'</b> · ประตู '+m.g+' · แอสซิสต์ '+m.a:'คุณไม่ได้ลงสนามในแมตช์นี้')+'</p>'+(lg?'<p><b>'+lg+'</b></p>':'')+'</div><div class="card"><h2>คุยกับโค้ช</h2><p>💬 "'+coach+'"</p>'+B([["ขอบคุณครับโค้ช ผมจะพยายามต่อ",function(){fx({mor:4,pass:0});train()},"กำลังใจ +4"],["ผมอยากได้โอกาสมากกว่านี้",function(){if(S.role<2&&Math.random()<.45){S.role++;fx({mor:2});S.coachMsg="โค้ชพยักหน้า จะให้โอกาสมากขึ้น"}else{fx({mor:-6});S.coachMsg="โค้ชไม่พอใจที่คุณเรียกร้อง"}train()},"เสี่ยงได้บทบาทดีขึ้นหรือโดนหมางเมิน"]])+'</div>')}
+function train(){var msg=S.coachMsg||"";S.coachMsg="";var yg=S.age<22?1:0,o=Object.keys(ST).map(function(k){return[ST[k]+" ("+S.s[k]+")",function(){var g=Math.max(1,rnd(2,4)+S.tr+yg+(S.mor>75?1:0)-(S.age>30?2:0));fx({[k]:g});S.wk++;week()},"ฝึกเสริมเพื่ออัปเกรด +2 ถึง +5"]});
+o.push(["พักฟื้นและใช้เวลากับครอบครัว",function(){fx({mor:10,phys:1});S.wk++;week()},"กำลังใจ +10"]);
+put(head()+'<div class="card"><h2>เลือกฝึกซ้อมสัปดาห์นี้</h2>'+(msg?'<p><b>'+msg+'</b></p>':'')+B(o)+'</div>')}
+/* ---- จบฤดูกาล ---- */
+function endSeason(){var q=S.sea,cup=q.w>=4&&Math.random()<.5;if(cup)S.cups++;
+var gr=chkGoal();S.cash+=S.wage*52/1e6;S.age++;S.yrs--;
+if(S.age>=30)S.s.phys=cl(S.s.phys-rnd(1,3),15,99);if(S.age>=33){S.s.drib=cl(S.s.drib-2,15,99);S.s.pass=cl(S.s.pass-1,15,99)}
+S.hist.push(S.club.n);var rec=q.w+" ชนะ "+q.d+" เสมอ "+q.l+" แพ้";S.sea={w:0,d:0,l:0};S.wk=0;
+var last=S.age>=36;
+put(head()+'<div class="card"><h2>จบฤดูกาล</h2><p>ผลงานทีม: '+rec+'</p><p>'+gr+'</p>'+(cup?'<p><b>🏆 ทีมคว้าแชมป์!</b></p>':'')+'<p>รายได้ปีนี้ $'+(S.wage*52/1e6).toFixed(2)+'M</p>'+B(last?[["แขวนสตั๊ด",retire,"","main"]]:S.yrs<=0?[["พิจารณาสัญญาฉบับใหม่",function(){sign(false)},"","main"],["แขวนสตั๊ด",retire]]:[["ไปฤดูกาลถัดไป",week,"","main"]])+'</div>')}
+function retire(){delG();var sc=S.goals*1.2+S.ast*1.5+S.cups*25+S.cash*3+S.apps*.3,t=sc>420?"ตำนานลูกหนังโลก":sc>260?"ซูเปอร์สตาร์":sc>150?"นักเตะอาชีพเต็มตัว":sc>70?"ตัวหลักที่แฟนบอลจดจำ":"นักเตะผู้เดินตามความฝัน";
+put('<div class="card"><h2>แขวนสตั๊ดที่อายุ '+S.age+'</h2><div style="font:800 30px Kanit,sans-serif">'+t+'</div><p class="mu">'+S.name+' ('+PN[S.pos]+', '+S.country+')</p><div class="meta"><span>ลงสนาม <b>'+S.apps+'</b></span><span>ประตู <b>'+S.goals+'</b></span><span>แอสซิสต์ <b>'+S.ast+'</b></span><span>ถ้วย <b>'+S.cups+'</b></span><span>เงินสะสม <b>$'+S.cash.toFixed(1)+'M</b></span></div><p>เส้นทางสโมสร: '+S.hist.filter(function(x,i,a){return a.indexOf(x)==i}).join(" → ")+'</p>'+B([["เริ่มอาชีพใหม่",start,"","main"]])+'</div>')}
+start();
+</script>
+</body>
+</html>
