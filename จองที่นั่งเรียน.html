@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>จองที่นั่งเรียน</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1d2330;--muted:#6b7385;--line:#d9dde5;--free:#e6f4ea;--free-b:#34a853;--taken:#d93025;--taken-bg:#fde7e5;--sel:#1a73e8;--sel-bg:#e3eefd;--accent:#1a73e8;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--card:#1e222b;--text:#e8eaf0;--muted:#98a0b3;--line:#363c4a;--free:#17301f;--free-b:#4cc16a;--taken:#ff6b5e;--taken-bg:#3b1c1a;--sel:#6ea8ff;--sel-bg:#1c2b45;--accent:#4d8dff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171d;--card:#1e222b;--text:#e8eaf0;--muted:#98a0b3;--line:#363c4a;--free:#17301f;--free-b:#4cc16a;--taken:#ff6b5e;--taken-bg:#3b1c1a;--sel:#6ea8ff;--sel-bg:#1c2b45;--accent:#4d8dff;color-scheme:dark}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font-family:"Noto Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px}
+.wrap{max-width:960px;margin:0 auto}
+h1{font-size:1.4rem;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 16px;font-size:.9rem}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input{flex:1;min-width:180px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);font:inherit}
+button{padding:10px 18px;border:0;border-radius:8px;background:var(--accent);color:#fff;font:inherit;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+#msg{margin-top:10px;font-size:.92rem;min-height:1.2em}
+.ok{color:var(--free-b)}.err{color:var(--taken)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted);margin-bottom:10px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px;border:2px solid}
+.scroll{overflow-x:auto}
+.board{min-width:640px;text-align:center}
+.front{background:var(--line);border-radius:6px;padding:6px;margin:0 auto 14px;font-size:.85rem;color:var(--muted);max-width:420px}
+.line{display:flex;justify-content:center;gap:28px;margin-bottom:10px}
+.grp{display:flex;gap:6px}
+.seat{width:56px;min-height:52px;border:2px solid var(--free-b);background:var(--free);color:var(--text);border-radius:8px;padding:3px;font-size:.75rem;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;overflow:hidden}
+.seat b{font-size:.95rem}
+.seat span{font-size:.65rem;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seat.taken{border-color:var(--taken);background:var(--taken-bg);cursor:not-allowed}
+.seat.taken b{color:var(--taken)}
+.seat.sel{border-color:var(--sel);background:var(--sel-bg)}
+.seat.mine{outline:3px solid var(--sel)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>จองที่นั่งเรียน</h1>
+  <p class="sub">โต๊ะทั้งหมด 37 โต๊ะ · เลือกได้คนละ 1 ที่ · เมื่อจองแล้วคนอื่นเลือกซ้ำไม่ได้</p>
+
+  <div class="panel">
+    <div class="row">
+      <input id="name" maxlength="40" placeholder="1) พิมพ์ชื่อของคุณก่อน" autocomplete="name">
+      <button id="btn" disabled>ยืนยันที่นั่ง</button>
+    </div>
+    <div id="msg"></div>
+  </div>
+
+  <div class="panel">
+    <div class="legend">
+      <span><i style="border-color:var(--free-b);background:var(--free)"></i>ว่าง</span>
+      <span><i style="border-color:var(--taken);background:var(--taken-bg)"></i>มีคนจองแล้ว</span>
+      <span><i style="border-color:var(--sel);background:var(--sel-bg)"></i>ที่คุณเลือก</span>
+      <span id="count"></span>
+    </div>
+    <div class="scroll"><div class="board">
+      <div class="front">หน้าห้อง</div>
+      <div id="grid"></div>
+    </div></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var TOTAL = 37, PATTERN = [3,2,3,2];
+  var seats = {}, selected = null, mine = null, busy = false, db = null, holder = "u" + Math.random().toString(36).slice(2);
+  var nameEl = document.getElementById("name"), btn = document.getElementById("btn"),
+      msg = document.getElementById("msg"), grid = document.getElementById("grid"), count = document.getElementById("count");
+
+  try { var saved = localStorage.getItem("mySeat"); if (saved) mine = parseInt(saved, 10) || null; } catch(e){}
+
+  function say(t, cls){ msg.textContent = t || ""; msg.className = cls || ""; }
+
+  function render(){
+    grid.textContent = "";
+    var n = 1;
+    while (n <= TOTAL){
+      var line = document.createElement("div"); line.className = "line";
+      for (var g = 0; g < PATTERN.length && n <= TOTAL; g++){
+        var grp = document.createElement("div"); grp.className = "grp";
+        for (var k = 0; k < PATTERN[g] && n <= TOTAL; k++, n++){
+          grp.appendChild(seatEl(n));
+        }
+        line.appendChild(grp);
+      }
+      grid.appendChild(line);
+    }
+    var used = Object.keys(seats).length;
+    count.textContent = "ว่าง " + (TOTAL - used) + " / " + TOTAL;
+    btn.disabled = busy || !db || mine !== null || selected === null || !nameEl.value.trim();
+  }
+
+  function seatEl(i){
+    var b = document.createElement("button");
+    var s = seats[i];
+    b.className = "seat" + (s ? " taken" : "") + (!s && selected === i ? " sel" : "") + (mine === i ? " mine" : "");
+    var num = document.createElement("b"); num.textContent = i; b.appendChild(num);
+    if (s){ var nm = document.createElement("span"); nm.textContent = s.name; nm.title = s.name; b.appendChild(nm); }
+    b.disabled = !!s;
+    b.style.cursor = s ? "not-allowed" : "pointer";
+    b.addEventListener("click", function(){
+      if (seats[i] || mine !== null) return;
+      if (!nameEl.value.trim()){ say("กรุณาพิมพ์ชื่อก่อนเลือกที่นั่ง", "err"); nameEl.focus(); return; }
+      selected = i; say("เลือกโต๊ะ " + i + " แล้ว กด “ยืนยันที่นั่ง” เพื่อจอง"); render();
+    });
+    return b;
+  }
+
+  nameEl.addEventListener("input", render);
+
+  btn.addEventListener("click", async function(){
+    var name = nameEl.value.trim(), i = selected;
+    if (!name || i === null || !db || busy) return;
+    busy = true; render(); say("กำลังจอง...");
+    try {
+      var ref = db.doc("seats/" + i);
+      var lease = await ref.acquire({holder: holder, ttlMs: 3000});
+      if (!lease.acquired){ say("โต๊ะ " + i + " มีคนกำลังจองอยู่ ลองใหม่อีกครั้ง", "err"); }
+      else {
+        var snap = await ref.get();
+        if (snap.exists && snap.data && snap.data.name){
+          say("โต๊ะ " + i + " มีคนจองไปแล้ว กรุณาเลือกโต๊ะอื่น", "err"); selected = null;
+        } else {
+          await ref.set({name: name, at: Date.now(), by: holder});
+          mine = i; selected = null;
+          try { localStorage.setItem("mySeat", String(i)); } catch(e){}
+          say("จองสำเร็จ! " + name + " ได้โต๊ะ " + i, "ok");
+        }
+      }
+    } catch(e){
+      say("จองไม่สำเร็จ: " + ((e && e.message) || "ไม่ทราบสาเหตุ") + " (ต้องมีสิทธิ์ Contributor ขึ้นไป)", "err");
+    }
+    busy = false; render();
+  });
+
+  render();
+  say("กำลังเชื่อมต่อ...");
+  var timer = setTimeout(function(){ if (!db) say("ยังเชื่อมต่อฐานข้อมูลไม่ได้ ลองรีเฟรชหน้านี้", "err"); }, 10000);
+
+  (async function init(){
+    try {
+      var d = await claude.use("db");
+      if (!d){ say("ต้องเข้าสู่ระบบ Claude เพื่อใช้งานการจองที่นั่ง", "err"); return; }
+      db = d; clearTimeout(timer);
+      db.collection("seats").onSnapshot(function(snap){
+        var m = {};
+        snap.docs.forEach(function(doc){ var v = doc.data(); if (v && v.name) m[doc.id] = v; });
+        seats = m;
+        if (selected !== null && seats[selected]){ say("โต๊ะ " + selected + " มีคนจองไปแล้ว กรุณาเลือกใหม่", "err"); selected = null; }
+        if (mine !== null && (!seats[mine] || seats[mine].by !== holder)) { if (!seats[mine]) { mine = null; try{localStorage.removeItem("mySeat");}catch(e){} } }
+        if (msg.textContent === "กำลังเชื่อมต่อ...") say("");
+        render();
+      }, function(){ say("เชื่อมต่อข้อมูลไม่ได้ ลองรีเฟรชหน้านี้", "err"); });
+      render();
+    } catch(e){ say("เชื่อมต่อไม่ได้", "err"); }
+  })();
+})();
+</script>
+</body>
+</html>
